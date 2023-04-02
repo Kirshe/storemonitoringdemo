@@ -38,3 +38,12 @@ class Schedule(models.Model):
 
     def __str__(self) -> str:
         return f"{self.store}@{self.day_of_week}"
+
+
+class UpDownTime(models.Model):
+    class Status(models.TextChoices):
+        UP = "UP"
+        DOWN = "DOWN"
+    store = models.ForeignKey(Store, on_delete=models.CASCADE)
+    status = models.CharField(max_length=4, choices=Status.choices)
+    timestamp = models.DateTimeField()  ## UTC time
