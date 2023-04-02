@@ -20,6 +20,9 @@ class Store(models.Model):
         default='America/Chicago'
     )
 
+    class Meta:
+        unique_together = ('store_id', 'timezone')
+
     def __str__(self) -> str:
         return str(self.store_id)
 
@@ -27,8 +30,11 @@ class Store(models.Model):
 class Schedule(models.Model):
     store = models.ForeignKey(Store, on_delete=models.CASCADE)
     day_of_week = models.PositiveSmallIntegerField(choices=DayOfWeek.choices)
-    start_time = models.DateTimeField()     ## Local time
-    end_time = models.DateTimeField()       ## Local time
+    start_time = models.TimeField()     ## Local time
+    end_time = models.TimeField()       ## Local time
+
+    class Meta:
+        unique_together = ('store', 'day_of_week', 'start_time', 'end_time')
 
     def __str__(self) -> str:
         return f"{self.store}@{self.day_of_week}"
