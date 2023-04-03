@@ -50,3 +50,8 @@ class UpDownTime(models.Model):
     status = models.CharField(max_length=4, choices=Status.choices)
     status_expected = models.CharField(max_length=4, choices=Status.choices)
     timestamp = models.DateTimeField()  ## UTC time
+
+
+class Report(models.Model):
+    csv = models.TextField(null=True, default=None)
+    generated = models.BooleanField(default=False)
