@@ -12,6 +12,11 @@ class DayOfWeek(models.IntegerChoices):
     SUNDAY = 6
 
 
+class Status(models.TextChoices):
+    UP = "UP"
+    DOWN = "DOWN"
+
+
 class Store(models.Model):
     store_id = models.PositiveBigIntegerField(primary_key=True)
     timezone = models.CharField(
@@ -41,9 +46,7 @@ class Schedule(models.Model):
 
 
 class UpDownTime(models.Model):
-    class Status(models.TextChoices):
-        UP = "UP"
-        DOWN = "DOWN"
     store = models.ForeignKey(Store, on_delete=models.CASCADE)
     status = models.CharField(max_length=4, choices=Status.choices)
+    status_expected = models.CharField(max_length=4, choices=Status.choices)
     timestamp = models.DateTimeField()  ## UTC time

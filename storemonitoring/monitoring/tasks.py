@@ -1,7 +1,7 @@
 import datetime
 from typing import List
 from django.db.utils import IntegrityError
-from .models import Store, Schedule, DayOfWeek, UpDownTime
+from .models import Status, Store, Schedule, DayOfWeek, UpDownTime
 import csv
 import pytz
 import requests
@@ -54,18 +54,19 @@ def status_csv_poll(url: str):
             schedules = [Schedule(
                 store=store, 
                 day_of_week=DayOfWeek(timestamp.weekday()), 
-                start_time="00:00:00", 
-                end_time="00:00:00"
+                start_time=datetime.time(0, 0, 0), 
+                end_time=datetime.time(23, 59, 59)
             )]
-        for schedule in schedules:
-            if schedule.start_time <= timestamp.time() <= schedule.end_time and row['status'] == 'active':
-                logging.debug(f"Timestamp is as expected for {store}: {row}")
-            else:
-                status = UpDownTime.Status.UP if row['status'] == 'inactive' else UpDownTime.Status.DOWN
-                UpDownTime.objects.create(
-                    store=store,
-                    timestamp=utc_timestamp,
-                    status=status
-                )
+        if any((schedule.start_time <= timestamp.time() <= schedule.end_time) for schedule in schedules):
+            status_expected = Status.UP
+        else:
+            status_expected = Status.DOWN
+        status = Status.UP if row['status'] == 'active' else Status.DOWN
+        UpDownTime.objects.create(
+            store=store,
+            timestamp=utc_timestamp,
+            status_expected=status_expected,
+            status=status
+        )
 
         
