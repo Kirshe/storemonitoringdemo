@@ -1,7 +1,11 @@
 import datetime
+from io import StringIO
 from typing import List
 from django.db.utils import IntegrityError
-from .models import Status, Store, Schedule, DayOfWeek, UpDownTime
+from celery import shared_task
+
+from storemonitoring.monitoring.report import ReportGenerator
+from .models import Report, Status, Store, Schedule, DayOfWeek, UpDownTime
 import csv
 import pytz
 import requests
@@ -39,6 +43,7 @@ def read_schedule_csv(filename: str):
                 )
 
 
+@shared_task
 def status_csv_poll(url: str):
     res = requests.get(url)
     if not res.ok:
@@ -69,4 +74,32 @@ def status_csv_poll(url: str):
             status=status
         )
 
-        
+
+@shared_task
+def generate_report(report: Report):
+    fp = StringIO()
+    writer = csv.writer(fp)
+    header = [
+        "store_id", "uptime_last_hour(in minutes)", "uptime_last_day(in hours)", 
+        "update_last_week(in hours)", "downtime_last_hour(in minutes)", "downtime_last_day(in hours)", 
+        "downtime_last_week(in hours)"
+    ]
+    writer.writerow(header)
+    for store in Store.objects.all():
+        report_generator = ReportGenerator(store)
+        uptime_hour, downtime_hour = report_generator.uptime_last_hour()
+        uptime_day, downtime_day = report_generator.uptime_last_day()
+        uptime_week, downtime_week = report_generator.uptime_last_week()
+        writer.writerow([
+            store.store_id,
+            uptime_hour.total_seconds() // 60,
+            uptime_day.total_seconds() // 3600,
+            uptime_week.total_seconds() // 3600,
+            downtime_hour.total_seconds() // 60,
+            downtime_day.total_seconds() // 3600,
+            downtime_week.total_seconds() // 3600
+        ])
+    fp.seek(0)
+    report.csv = fp.read()
+    report.generated = True
+    report.save()

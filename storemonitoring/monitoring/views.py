@@ -6,6 +6,7 @@ from rest_framework import status
 
 from storemonitoring.monitoring.models import Report
 from storemonitoring.monitoring.serializers import ReportIdSerializer
+from storemonitoring.monitoring.tasks import generate_report
 
 
 class TriggerReport(APIView):
@@ -13,7 +14,7 @@ class TriggerReport(APIView):
 
     def post(self, request):
         report = Report.objects.create()
-        ...
+        generate_report.delay(report)
         serialized = ReportIdSerializer(instance=report)
         return Response(serialized.data, status=status.HTTP_201_CREATED)
 
