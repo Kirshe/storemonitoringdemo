@@ -48,7 +48,6 @@ class Schedule(models.Model):
 class UpDownTime(models.Model):
     store = models.ForeignKey(Store, on_delete=models.CASCADE)
     status = models.CharField(max_length=4, choices=Status.choices)
-    status_expected = models.CharField(max_length=4, choices=Status.choices)
     timestamp = models.DateTimeField()  ## UTC time
 
 

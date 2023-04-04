@@ -53,24 +53,10 @@ def status_csv_poll(url: str):
     for row in reader:
         store = Store.objects.filter(store_id=row['store_id']).get()
         utc_timestamp = datetime.datetime.strptime(row['timestamp_utc'], "%Y-%m-%d %H:%M:%s UTC")
-        timestamp = pytz.utc.localize(utc_timestamp, is_dst=None).astimezone(pytz.timezone(store.timezone))
-        schedules: List[Schedule] = store.schedule_set.filter(day_of_week=DayOfWeek(timestamp.weekday()))
-        if not schedules:
-            schedules = [Schedule(
-                store=store, 
-                day_of_week=DayOfWeek(timestamp.weekday()), 
-                start_time=datetime.time(0, 0, 0), 
-                end_time=datetime.time(23, 59, 59)
-            )]
-        if any((schedule.start_time <= timestamp.time() <= schedule.end_time) for schedule in schedules):
-            status_expected = Status.UP
-        else:
-            status_expected = Status.DOWN
         status = Status.UP if row['status'] == 'active' else Status.DOWN
         UpDownTime.objects.create(
             store=store,
             timestamp=utc_timestamp,
-            status_expected=status_expected,
             status=status
         )
 
