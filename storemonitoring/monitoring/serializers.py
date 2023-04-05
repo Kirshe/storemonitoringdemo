@@ -1,6 +1,5 @@
 from rest_framework import serializers
-
-from storemonitoring.monitoring.models import Report
+from monitoring.models import Report
 
 
 class ReportIdSerializer(serializers.ModelSerializer):

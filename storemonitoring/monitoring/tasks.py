@@ -3,8 +3,7 @@ from io import StringIO
 from typing import List
 from django.db.utils import IntegrityError
 from celery import shared_task
-
-from storemonitoring.monitoring.report import ReportGenerator
+from monitoring.report import ReportGenerator
 from .models import Report, Status, Store, Schedule, DayOfWeek, UpDownTime
 import csv
 import pytz
@@ -51,8 +50,8 @@ def status_csv_poll(url: str):
     csv_data = res.text.splitlines()
     reader = csv.DictReader(csv_data)
     for row in reader:
-        store = Store.objects.filter(store_id=row['store_id']).get()
-        utc_timestamp = datetime.datetime.strptime(row['timestamp_utc'], "%Y-%m-%d %H:%M:%s UTC")
+        store, _ = Store.objects.get_or_create(store_id=row['store_id'])
+        utc_timestamp = datetime.datetime.strptime(row['timestamp_utc'], "%Y-%m-%d %H:%M:%S.%f UTC")
         status = Status.UP if row['status'] == 'active' else Status.DOWN
         UpDownTime.objects.create(
             store=store,
@@ -62,7 +61,8 @@ def status_csv_poll(url: str):
 
 
 @shared_task
-def generate_report(report: Report):
+def generate_report(report_id: int):
+    report = Report.objects.filter(id=report_id).get()
     fp = StringIO()
     writer = csv.writer(fp)
     header = [
@@ -78,12 +78,12 @@ def generate_report(report: Report):
         uptime_week, downtime_week = report_generator.uptime_last_week()
         writer.writerow([
             store.store_id,
-            uptime_hour.total_seconds() // 60,
-            uptime_day.total_seconds() // 3600,
-            uptime_week.total_seconds() // 3600,
-            downtime_hour.total_seconds() // 60,
-            downtime_day.total_seconds() // 3600,
-            downtime_week.total_seconds() // 3600
+            int(uptime_hour.total_seconds() / 60),
+            int(uptime_day.total_seconds() / 3600),
+            int(uptime_week.total_seconds() / 3600),
+            int(downtime_hour.total_seconds() / 60),
+            int(downtime_day.total_seconds() / 3600),
+            int(downtime_week.total_seconds() / 3600)
         ])
     fp.seek(0)
     report.csv = fp.read()

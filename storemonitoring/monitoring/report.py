@@ -1,9 +1,7 @@
 import datetime
 from typing import List, Tuple
-
 import pytz
-
-from storemonitoring.monitoring.models import DayOfWeek, Schedule, Status, Store, UpDownTime
+from monitoring.models import DayOfWeek, Schedule, Status, Store, UpDownTime
 
 
 class ReportGenerator:
@@ -51,8 +49,8 @@ class ReportGenerator:
             elif up_start:
                 delta = utc_end_time - up_start
                 up_times.append((delta, Status.UP))
-        total_uptime = sum(delta for delta, status in up_times if status == Status.UP)
-        total_downtime = sum(delta for delta, status in up_times if status == Status.DOWN)
+        total_uptime = sum((delta for delta, status in up_times if status == Status.UP), start=datetime.timedelta(seconds=0))
+        total_downtime = sum((delta for delta, status in up_times if status == Status.DOWN), start=datetime.timedelta(seconds=0))
         return total_uptime, total_downtime
 
     def uptime_last_week(self):
